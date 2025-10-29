@@ -1,71 +1,28 @@
-# ---- Proxmox API ----
-variable "pm_api_url" {
-  description = "Adresse de l'API Proxmox"
-  type        = string
+variable "container_name_1" {
+  default = "python-container-1"
 }
 
-variable "pm_api_token_id" {
-  description = "ID du token API Proxmox"
-  type        = string
+variable "container_name_2" {
+  default = "python-container-2"
 }
 
-variable "pm_api_token_secret" {
-  description = "Secret du token API Proxmox"
-  type        = string
-  sensitive   = true
+variable "image" {
+  default = "python:3.9-slim"
 }
 
-variable "pm_tls_insecure" {
-  description = "Accepter les certificats auto-signés"
-  type        = bool
-  default     = true
-}
+variable "script_content" {
+  default = <<EOT
+import time
+from flask import Flask
 
-variable "target_node" {
-  description = "Nom du node Proxmox"
-  type        = string
-  default     = "Proxmox-Terraform"
-}
+app = Flask(__name__)
 
-variable "storage" {
-  description = "Nom du stockage Proxmox"
-  type        = string
-  default     = "local-lvm"
-}
+@app.route("/")
+def home():
+    result = "<br>".join(["DevOps is cool!" for _ in range(10)])
+    return f"<h1>{result}</h1>"
 
-variable "vm_bridge" {
-  description = "Bridge réseau à utiliser"
-  type        = string
-  default     = "vmbr0"
-}
-
-# ---- VM Configurations ----
-variable "vm_configs" {
-  description = "Configurations des différents templates de VM"
-  type = map(object({
-    template_name : string
-    count         : number
-    name_prefix   : string
-    memory        : number
-    cores         : number
-    disk_size     : string
-  }))
-  default = {
-    debian = {
-      template_name = "debian12-template"
-      count         = 2
-      name_prefix   = "debian"
-      memory        = 1024
-      cores         = 2
-      disk_size     = "10G"
-    },
-    win11 = {
-      template_name = "win11-template"
-      count         = 0
-      name_prefix   = "win11"
-      memory        = 2048
-      cores         = 2
-      disk_size     = "50G"
-    }
-  }
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+EOT
 }
