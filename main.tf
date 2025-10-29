@@ -1,32 +1,47 @@
-# =====================================
-# Ressources pour les VM Proxmox
-# =====================================
+resource "docker_image" "python_image" {
+  name = var.image
+}
 
-# ---- Debian ----
-resource "proxmox_vm_qemu" "debian" {
-  count       = var.vm_configs["debian"].count
-  name        = "${var.vm_configs["debian"].name_prefix}-${count.index + 1}"
-  target_node = var.target_node
-  clone       = var.vm_configs["debian"].template_name
-  vmid        = 400 + count.index
+resource "docker_container" "python_container_1" {
+  name  = var.container_name_1
+  image = docker_image.python_image.latest
 
-  cpu {
-    cores = var.vm_configs["debian"].cores
+  volumes {
+    container_path = "/app"
+    host_path      = "${path.module}/app1"
   }
 
-  memory = var.vm_configs["debian"].memory
+  ports {
+    internal = 5000
+    external = 5001
+  }
 
-  disk {
-    slot    = "scsi0"
-    type    = "disk"
-    size    = var.vm_configs["debian"].disk_size
-    storage = var.storage
+  command = ["python", "/app/script.py"]
+}
+
+resource "docker_container" "python_container_2" {
+  name  = var.container_name_2
+  image = docker_image.python_image.latest
+
+  volumes {
+    container_path = "/app"
+    host_path      = "${path.module}/app2"
   }
-  
-  ipconfig0 = "static 192.168.3.${20 + count.index}/24"
-  network {
-    id     = 0
-    model  = "virtio"
-    bridge = var.vm_bridge
+
+  ports {
+    internal = 5000
+    external = 5002
   }
+
+  command = ["python", "/app/script.py"]
+}
+
+resource "local_file" "app1_script" {
+  filename = "${path.module}/app1/script.py"
+  content  = var.script_content
+}
+
+resource "local_file" "app2_script" {
+  filename = "${path.module}/app2/script.py"
+  content  = var.script_content
 }
